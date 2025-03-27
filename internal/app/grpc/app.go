@@ -34,7 +34,6 @@ func (a *App) Run() error {
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.Int("port", a.port),
 	)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
@@ -61,7 +60,7 @@ func (a *App) Stop() {
 	const op = "grpcapp.stop"
 
 	a.log.With(slog.String("op", op)).
-		Info("stopping gRPC server", slog.Int("port", a.port))
+		Info("Stopping gRPC server", slog.Int("port", a.port))
 
 	a.gRPCServer.GracefulStop()
 }

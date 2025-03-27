@@ -5,6 +5,8 @@ import (
 	"msu-logging-backend/internal/app"
 	"msu-logging-backend/internal/config"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -18,11 +20,19 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting...")
+	log.Info("Starting...")
 
 	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL)
 
-	application.GRPCSrv.MustRun()
+	go application.GRPCSrv.MustRun()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	<-stop
+
+	application.GRPCSrv.Stop()
+	log.Info("Application stopped")
 }
 
 func setupLogger(env string) *slog.Logger {
