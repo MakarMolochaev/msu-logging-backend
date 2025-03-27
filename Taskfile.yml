@@ -1,0 +1,10 @@
+version: "3"
+
+tasks:
+  run:
+    desc: "Run program"
+    cmds:
+    - go run cmd/msu-logging-backend/main.go --config=./config/local.yaml
+  build:
+    cmds:
+    - go build cmd/msu-logging-backend/main.go
