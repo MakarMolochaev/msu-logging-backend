@@ -5,5 +5,5 @@ grpc:
 
 websocket:
   port: 443
-  certfile: "server.key"
-  sertfile: "server.crt"
+  keyfile: "./server.key"
+  certfile: "./server.crt"

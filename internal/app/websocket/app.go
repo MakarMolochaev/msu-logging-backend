@@ -61,8 +61,9 @@ func New(
 
 func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
+	token := r.URL.Query().Get("token")
+	fmt.Println(token)
 	/*
-		token = r.URL.Query().Get("token")
 		if token == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return

@@ -23,8 +23,8 @@ type GRPCConfig struct {
 
 type WebsocketConfig struct {
 	Port     int    `yaml:"port"`
-	CertFile string `yaml:"certfile"`
 	KeyFile  string `yaml:"keyfile"`
+	CertFile string `yaml:"certfile"`
 }
 
 func MustLoad() *Config {
