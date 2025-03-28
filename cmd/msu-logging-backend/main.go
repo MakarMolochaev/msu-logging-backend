@@ -1,16 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"log/slog"
 	"msu-logging-backend/internal/app"
 	"msu-logging-backend/internal/config"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -27,10 +23,11 @@ func main() {
 
 	log.Info("Starting...")
 
-	application := app.New(log, cfg, handleWebSocketConnection)
+	application := app.New(log, cfg)
 
 	go application.GRPCSrv.MustRun()
 	go application.WSSrv.MustRun()
+	go application.RMQSrv.MustRun()
 
 	//shutdown
 
@@ -44,18 +41,19 @@ func main() {
 	log.Info("Application stopped")
 }
 
-func handleWebSocketConnection(conn *websocket.Conn) {
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("Client disconnected:", err)
-			return
+/*
+	func handleWebSocketConnection(conn *websocket.Conn) {
+		for {
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("Client disconnected:", err)
+				return
+			}
+			// Обработка аудио-данных
+			fmt.Println("Received audio chunk:", len(msg), "bytes")
 		}
-		// Обработка аудио-данных
-		fmt.Println("Received audio chunk:", len(msg), "bytes")
 	}
-}
-
+*/
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 

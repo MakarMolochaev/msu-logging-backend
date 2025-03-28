@@ -4,25 +4,26 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log/slog"
+	"msu-logging-backend/internal/services/audioservice"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
 type App struct {
-	log      *slog.Logger
-	server   *http.Server
-	port     int
-	upgrader websocket.Upgrader
-	handler  func(*websocket.Conn)
-	certFile string
-	keyFile  string
+	log           *slog.Logger
+	server        *http.Server
+	port          int
+	upgrader      websocket.Upgrader
+	audio_service *audioservice.AudioService
+	certFile      string
+	keyFile       string
 }
 
 func New(
 	log *slog.Logger,
 	port int,
-	handler func(*websocket.Conn),
+	audio_service *audioservice.AudioService,
 	certFile string,
 	keyFile string,
 ) *App {
@@ -49,7 +50,6 @@ func New(
 		server:   server,
 		port:     port,
 		upgrader: upgrader,
-		handler:  handler,
 		certFile: certFile,
 		keyFile:  keyFile,
 	}
@@ -57,6 +57,19 @@ func New(
 	mux.HandleFunc("/ws", app.handleWebSocket)
 
 	return app
+}
+
+func (a *App) handleWebSocketConnection(conn *websocket.Conn) {
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println("Client disconnected:", err)
+			a.audio_service.WebsocketClosed(msg)
+			return
+		}
+
+		fmt.Println("Received audio chunk:", len(msg), "bytes")
+	}
 }
 
 func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +92,7 @@ func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	a.handler(conn)
+	a.handleWebSocketConnection(conn)
 }
 
 func (a *App) Run() error {

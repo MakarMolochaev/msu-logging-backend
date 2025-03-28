@@ -13,3 +13,6 @@ tasks:
     desc: "Apply migrations"
     cmds:
     - go run ./cmd/migrator
+  runservs:
+    cmds:
+    - docker-compose --env-file .env.local up -d

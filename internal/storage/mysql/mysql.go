@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Storage struct {

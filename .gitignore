@@ -5,3 +5,4 @@
 *.wav
 bin
 .vscode
+.VSCodeCounter

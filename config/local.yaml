@@ -7,3 +7,8 @@ websocket:
   port: 443
   keyfile: "./server.key"
   certfile: "./server.crt"
+
+message_broker:
+  port: 5672
+  transcribe_queue: "transcribe_queue"
+  process_queue: "process_queue"

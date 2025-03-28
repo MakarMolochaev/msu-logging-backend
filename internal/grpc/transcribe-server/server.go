@@ -20,7 +20,6 @@ func (s *serverAPI) SendTranscribeResult(
 	ctx context.Context,
 	req *msu_loggingv1.TranscribeResult,
 ) (*msu_loggingv1.Result, error) {
-
 	fmt.Println(req.GetErrorMessage())
 	fmt.Println(req.GetResult())
 	fmt.Println(req.GetSuccess())

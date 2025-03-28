@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Env       string          `yaml:"env"`
-	GRPC      GRPCConfig      `yaml:"grpc"`
-	Websocket WebsocketConfig `yaml:"websocket"`
+	Env           string              `yaml:"env"`
+	GRPC          GRPCConfig          `yaml:"grpc"`
+	Websocket     WebsocketConfig     `yaml:"websocket"`
+	MessageBroker MessageBrokerConfig `yaml:"message_broker"`
 }
 
 type GRPCConfig struct {
@@ -25,6 +26,12 @@ type WebsocketConfig struct {
 	Port     int    `yaml:"port"`
 	KeyFile  string `yaml:"keyfile"`
 	CertFile string `yaml:"certfile"`
+}
+
+type MessageBrokerConfig struct {
+	Port            int    `yaml:"port"`
+	TranscribeQueue string `yaml:"transcribe_queue"`
+	ProcessQueue    string `yaml:"process_queue"`
 }
 
 func MustLoad() *Config {
