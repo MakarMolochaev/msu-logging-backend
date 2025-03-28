@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS logging.audio_file (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     link VARCHAR(1000),
-    date_au DATETIME
+    date_created DATETIME
 );
 
 
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS logging.text_file (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     text_full VARCHAR(1000),
     text_short VARCHAR(1000),
-    date_tx DATETIME
+    date_created DATETIME
 );
 
 CREATE TABLE IF NOT EXISTS logging.valuation (
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS logging.valuation (
     processing_speed INT,
     processing_quality INT,
     reuse_service BOOLEAN,
-    comment_tx VARCHAR(1000)
+    comment VARCHAR(1000)
 );
 
 CREATE TABLE IF NOT EXISTS logging.metrics (

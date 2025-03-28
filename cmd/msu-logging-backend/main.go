@@ -16,15 +16,19 @@ const (
 )
 
 func main() {
+
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
 
 	log.Info("Starting...")
 
-	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL)
+	application := app.New(log, cfg, nil)
 
 	go application.GRPCSrv.MustRun()
+	go application.WSSrv.MustRun()
+
+	//shutdown
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

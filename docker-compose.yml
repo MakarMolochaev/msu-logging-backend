@@ -29,7 +29,6 @@ services:
       - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq

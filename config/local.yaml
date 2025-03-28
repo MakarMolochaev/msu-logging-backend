@@ -1,5 +1,9 @@
 env: "local"
-token_ttl: 1h
 grpc:
-  port: 44044
+  port: 50051
   timeout: 10h
+
+websocket:
+  port: 443
+  certfile: "server.key"
+  sertfile: "server.crt"

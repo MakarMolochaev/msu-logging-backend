@@ -2,21 +2,29 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Env      string        `yaml:"env"`
-	GRPC     GRPCConfig    `yaml:"grpc"`
-	TokenTTL time.Duration `yaml:"token_ttl"`
+	Env       string          `yaml:"env"`
+	GRPC      GRPCConfig      `yaml:"grpc"`
+	Websocket WebsocketConfig `yaml:"websocket"`
 }
 
 type GRPCConfig struct {
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+
+type WebsocketConfig struct {
+	Port     int    `yaml:"port"`
+	CertFile string `yaml:"certfile"`
+	KeyFile  string `yaml:"keyfile"`
 }
 
 func MustLoad() *Config {
@@ -32,6 +40,11 @@ func MustLoad() *Config {
 	var cfg Config
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("failed to read config: " + err.Error())
+	}
+
+	err := godotenv.Load(fmt.Sprintf(".env.%s", cfg.Env))
+	if err != nil {
+		panic("failed to load environment variables:  " + err.Error())
 	}
 
 	return &cfg

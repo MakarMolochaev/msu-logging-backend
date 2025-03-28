@@ -6,5 +6,10 @@ tasks:
     cmds:
     - go run cmd/msu-logging-backend/main.go --config=./config/local.yaml
   build:
+    desc: "Build program"
     cmds:
     - go build cmd/msu-logging-backend/main.go
+  migrate:
+    desc: "Apply migrations"
+    cmds:
+    - go run ./cmd/migrator
