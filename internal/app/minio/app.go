@@ -66,7 +66,7 @@ func (a *App) UploadFile(objectName, filePath string) (string, error) {
 
 	log.Info("Файл %s успешно загружен в бакет %s\n", objectName, a.bucket_name)
 
-	link, err := a.client.PresignedGetObject(context.Background(), a.bucket_name, objectName, time.Hour*24*3, nil)
+	link, err := a.client.PresignedGetObject(context.Background(), a.bucket_name, objectName, time.Hour, nil)
 	if err != nil {
 		return "", fmt.Errorf("%s: Ошибка при получении временной ссылки на файл: %w", op, err)
 	}

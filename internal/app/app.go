@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 	grpcapp "msu-logging-backend/internal/app/grpc"
+	httpapp "msu-logging-backend/internal/app/http"
 	minioapp "msu-logging-backend/internal/app/minio"
 	rmqapp "msu-logging-backend/internal/app/rmq"
 	wsapp "msu-logging-backend/internal/app/websocket"
@@ -16,6 +17,7 @@ type App struct {
 	WSSrv    *wsapp.App
 	RMQSrv   *rmqapp.App
 	MinioSrv *minioapp.App
+	HTTPSrv  *httpapp.App
 }
 
 func New(
@@ -29,14 +31,13 @@ func New(
 
 	app := &App{}
 
-	// Сначала создаем Minio и RMQ
 	app.MinioSrv = minioapp.New(log)
 	app.RMQSrv = rmqapp.New(log, cfg)
 
-	// Затем создаем сервисы
 	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv, cfg.MessageBroker.TranscribeQueue)
 	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port)
 	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
+	app.HTTPSrv = httpapp.New(log, cfg.HTTP.Address, storage)
 
 	return app
 }

@@ -12,3 +12,6 @@ message_broker:
   port: 5672
   transcribe_queue: "transcribe_queue"
   process_queue: "process_queue"
+
+HTTP:
+  address: localhost:8080

@@ -15,6 +15,7 @@ type Config struct {
 	GRPC          GRPCConfig          `yaml:"grpc"`
 	Websocket     WebsocketConfig     `yaml:"websocket"`
 	MessageBroker MessageBrokerConfig `yaml:"message_broker"`
+	HTTP          HTTPConfig          `yaml:"HTTP"`
 }
 
 type GRPCConfig struct {
@@ -32,6 +33,10 @@ type MessageBrokerConfig struct {
 	Port            int    `yaml:"port"`
 	TranscribeQueue string `yaml:"transcribe_queue"`
 	ProcessQueue    string `yaml:"process_queue"`
+}
+
+type HTTPConfig struct {
+	Address string `yaml:"address"`
 }
 
 func MustLoad() *Config {

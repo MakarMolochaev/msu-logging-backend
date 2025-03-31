@@ -23,6 +23,7 @@ func main() {
 	go application.WSSrv.MustRun()
 	go application.RMQSrv.MustRun()
 	go application.MinioSrv.MustRun()
+	go application.HTTPSrv.MustRun()
 
 	//shutdown
 
