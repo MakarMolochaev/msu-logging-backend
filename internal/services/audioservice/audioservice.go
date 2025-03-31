@@ -13,6 +13,7 @@ type AudioService struct {
 	minio              *minioapp.App
 	audioFileLinkSaver AudioFileLinkSaver
 	messageBroker      *rmqapp.App
+	queue              string
 }
 
 type AudioFileLinkSaver interface {
@@ -24,38 +25,44 @@ func New(
 	audioFileLinkSaver AudioFileLinkSaver,
 	messageBroker *rmqapp.App,
 	minio *minioapp.App,
+	queue string,
 ) *AudioService {
 	return &AudioService{
 		log:                log,
 		audioFileLinkSaver: audioFileLinkSaver,
 		messageBroker:      messageBroker,
 		minio:              minio,
+		queue:              queue,
 	}
 }
 
 func (a *AudioService) WhenWebsocketClosed(filename string) error {
 	const op = "audioservice.WhenWebsocketClosed"
 
-	/*
-		log := a.log.With(
-			slog.String("op", op),
-		)
-	*/
+	log := a.log.With(
+		slog.String("op", op),
+	)
 
 	link, err := a.minio.UploadFile(filename, filename)
 	if err != nil {
-		a.log.Error("Read error", slog.String("error", err.Error()))
-		return fmt.Errorf("file upload error: %w", err)
+		a.log.Error("Minio upload error", slog.String("error", err.Error()))
+		return fmt.Errorf("%s:Minio upload error: %w", op, err)
 	}
 
-	//os.Remove(filename)
-	//log.Info("Audiofile uploaded to minio succesfully")
+	log.Info("Audiofile uploaded to minio succesfully")
 
 	_, err = a.audioFileLinkSaver.SaveAudioFile(context.Background(), link)
 	if err != nil {
-		return err
+		a.log.Error("MySQL save error", slog.String("error", err.Error()))
+		return fmt.Errorf("%s: MySQL save error: %w", op, err)
 	}
 
-	//log.Info("Audiofile uploaded to MySQL succesfully")
+	log.Info("Audiofile uploaded to MySQL succesfully")
+
+	err = a.messageBroker.SendMessage(a.queue, link)
+	if err != nil {
+		a.log.Error("RabbitMQ publish error", slog.String("error", err.Error()))
+		return fmt.Errorf("%s: RabbitMQ publish error: %w", op, err)
+	}
 	return nil
 }

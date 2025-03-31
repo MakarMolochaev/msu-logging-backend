@@ -97,39 +97,29 @@ func (a *App) Stop() error {
 	return err
 }
 
-func (a *App) Publish(queueName string, body []byte) error {
-	const op = "rmqapp.Publish"
-
-	if a.channel == nil {
-		return fmt.Errorf("%s: channel is not initialized", op)
-	}
-
+func (a *App) SendMessage(queueName string, message string) error {
 	_, err := a.channel.QueueDeclare(
 		queueName,
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("%s: queue declare error: %w", op, err)
+		return err
 	}
 
 	err = a.channel.Publish(
 		"",
 		queueName,
-		false, // mandatory
-		false, // immediate
+		false,
+		false,
 		amqp.Publishing{
-			ContentType:  "application/octet-stream",
-			Body:         body,
+			ContentType:  "text/plain",
+			Body:         []byte(message),
 			DeliveryMode: amqp.Persistent,
 		},
 	)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
+	return err
 }

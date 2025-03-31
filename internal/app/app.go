@@ -34,7 +34,7 @@ func New(
 	app.RMQSrv = rmqapp.New(log, cfg)
 
 	// Затем создаем сервисы
-	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv)
+	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv, cfg.MessageBroker.TranscribeQueue)
 	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port)
 	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
 
