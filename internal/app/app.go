@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 	grpcapp "msu-logging-backend/internal/app/grpc"
+	minioapp "msu-logging-backend/internal/app/minio"
 	rmqapp "msu-logging-backend/internal/app/rmq"
 	wsapp "msu-logging-backend/internal/app/websocket"
 	"msu-logging-backend/internal/config"
@@ -11,35 +12,31 @@ import (
 )
 
 type App struct {
-	GRPCSrv *grpcapp.App
-	WSSrv   *wsapp.App
-	RMQSrv  *rmqapp.App
+	GRPCSrv  *grpcapp.App
+	WSSrv    *wsapp.App
+	RMQSrv   *rmqapp.App
+	MinioSrv *minioapp.App
 }
 
 func New(
 	log *slog.Logger,
 	cfg *config.Config,
 ) *App {
-
-	/*
-		storage, err := mysql.New()
-		if err != nil {
-			panic(err)
-		}
-	*/
 	storage, err := mysql.New()
 	if err != nil {
 		panic(err)
 	}
 
-	var rmqApp *rmqapp.App
-	var grpcApp *grpcapp.App
-	var wsApp *wsapp.App
+	app := &App{}
 
-	audio_service := audioservice.New(log, storage, rmqApp)
+	// Сначала создаем Minio и RMQ
+	app.MinioSrv = minioapp.New(log)
+	app.RMQSrv = rmqapp.New(log, cfg)
 
-	rmqApp = rmqapp.New(log, cfg)
-	grpcApp = grpcapp.New(log, cfg.GRPC.Port)
-	wsApp = wsapp.New(log, cfg.Websocket.Port, audio_service, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
-	return &App{GRPCSrv: grpcApp, WSSrv: wsApp, RMQSrv: rmqApp}
+	// Затем создаем сервисы
+	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv)
+	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port)
+	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
+
+	return app
 }

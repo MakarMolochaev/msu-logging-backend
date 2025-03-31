@@ -9,12 +9,6 @@ import (
 	"syscall"
 )
 
-const (
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
-)
-
 func main() {
 
 	cfg := config.MustLoad()
@@ -28,6 +22,7 @@ func main() {
 	go application.GRPCSrv.MustRun()
 	go application.WSSrv.MustRun()
 	go application.RMQSrv.MustRun()
+	go application.MinioSrv.MustRun()
 
 	//shutdown
 
@@ -38,35 +33,23 @@ func main() {
 
 	application.GRPCSrv.Stop()
 	application.WSSrv.Stop()
+	application.RMQSrv.Stop()
 	log.Info("Application stopped")
 }
 
-/*
-	func handleWebSocketConnection(conn *websocket.Conn) {
-		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("Client disconnected:", err)
-				return
-			}
-			// Обработка аудио-данных
-			fmt.Println("Received audio chunk:", len(msg), "bytes")
-		}
-	}
-*/
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 
 	switch env {
-	case envLocal:
+	case "local":
 		log = slog.New(
 			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
-	case envDev:
+	case "dev":
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
-	case envProd:
+	case "prod":
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)

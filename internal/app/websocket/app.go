@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"msu-logging-backend/internal/services/audioservice"
+	"msu-logging-backend/internal/storage/filerepository"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -16,6 +17,7 @@ type App struct {
 	port          int
 	upgrader      websocket.Upgrader
 	audio_service *audioservice.AudioService
+	fileRepo      *filerepository.FileRepository
 	certFile      string
 	keyFile       string
 }
@@ -46,12 +48,14 @@ func New(
 	}
 
 	app := &App{
-		log:      log,
-		server:   server,
-		port:     port,
-		upgrader: upgrader,
-		certFile: certFile,
-		keyFile:  keyFile,
+		log:           log,
+		server:        server,
+		port:          port,
+		upgrader:      upgrader,
+		certFile:      certFile,
+		keyFile:       keyFile,
+		fileRepo:      filerepository.NewFileRepository(),
+		audio_service: audio_service,
 	}
 
 	mux.HandleFunc("/ws", app.handleWebSocket)
@@ -59,40 +63,50 @@ func New(
 	return app
 }
 
-func (a *App) handleWebSocketConnection(conn *websocket.Conn) {
+func (a *App) handleWebSocketConnection(conn *websocket.Conn) error {
+	filename := a.fileRepo.CreateAudioFile()
+	defer func() {
+		a.fileRepo.CloseAudioFile(filename)
+		if err := a.audio_service.WhenWebsocketClosed(filename); err != nil {
+			a.log.Error("Failed to process closed websocket", slog.String("error", err.Error()))
+		}
+		a.fileRepo.DeleteAudioFile(filename)
+	}()
+
+	a.log.Info("Created audio file")
 	for {
-		_, msg, err := conn.ReadMessage()
+		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println("Client disconnected:", err)
-			a.audio_service.WebsocketClosed(msg)
-			return
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				a.log.Info("Client disconnected gracefully")
+				return nil
+			}
+			a.log.Error("Read error", slog.String("error", err.Error()))
+			return fmt.Errorf("read error: %w", err)
 		}
 
-		fmt.Println("Received audio chunk:", len(msg), "bytes")
+		if messageType == websocket.BinaryMessage {
+			if err := a.fileRepo.WriteAudioData(filename, p); err != nil {
+				a.log.Error("Write error", slog.String("error", err.Error()))
+				return fmt.Errorf("write error: %w", err)
+			}
+		}
 	}
 }
 
 func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-
 	token := r.URL.Query().Get("token")
 	fmt.Println(token)
-	/*
-		if token == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// if !isValidToken(token) {}
-	*/
 
 	conn, err := a.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		a.log.Error("WebSocket upgrade failed", slog.String("error", err.Error()))
 		return
 	}
-	defer conn.Close()
 
-	a.handleWebSocketConnection(conn)
+	if err := a.handleWebSocketConnection(conn); err != nil {
+		a.log.Error("WebSocket connection error", slog.String("error", err.Error()))
+	}
 }
 
 func (a *App) Run() error {
