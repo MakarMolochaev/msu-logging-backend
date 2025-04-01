@@ -17,10 +17,29 @@ type Storage struct {
 func New() (*Storage, error) {
 	const op = "storage.mysql.New"
 
-	db, err := sql.Open("mysql", os.Getenv("MYSQL_CONN_STR"))
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+	connStr := os.Getenv("MYSQL_CONN_STR")
+	if connStr == "" {
+		return nil, fmt.Errorf("%s: missing MySQL connection string in MYSQL_CONN_STR environment variable", op)
 	}
+
+	db, err := sql.Open("mysql", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to open db connection: %w", op, err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("%s: failed to ping db: %w", op, err)
+	}
+
+	// Настраиваем пул соединений
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
 
 	return &Storage{db: db}, nil
 }
