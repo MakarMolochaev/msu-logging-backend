@@ -1,3 +1,9 @@
+DROP USER IF EXISTS 'mysqladmin'@'%';
+
+CREATE USER 'mysqladmin'@'%' IDENTIFIED BY 'mysqladmin';
+GRANT ALL PRIVILEGES ON logging.* TO 'mysqladmin'@'%';
+FLUSH PRIVILEGES;
+
 CREATE TABLE IF NOT EXISTS logging.audio_file (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     link VARCHAR(1000),

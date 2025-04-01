@@ -4,9 +4,9 @@ grpc:
   timeout: 10h
 
 websocket:
-  port: 443
-  keyfile: "./server.key"
-  certfile: "./server.crt"
+  port: 8081
+  certfile: "./certs/localhost.pem"
+  keyfile: "./certs/localhost-key.pem"
 
 message_broker:
   port: 5672
@@ -14,4 +14,4 @@ message_broker:
   process_queue: "process_queue"
 
 HTTP:
-  address: localhost:8080
+  address: localhost:8082

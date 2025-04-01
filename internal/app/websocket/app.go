@@ -95,8 +95,8 @@ func (a *App) handleWebSocketConnection(conn *websocket.Conn) error {
 }
 
 func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("token")
-	fmt.Println(token)
+	//token := r.URL.Query().Get("token")
+	//fmt.Println(token)
 
 	conn, err := a.upgrader.Upgrade(w, r, nil)
 	if err != nil {

@@ -17,3 +17,6 @@ tasks:
   runservs:
     cmds:
     - docker-compose --env-file .env.local up -d
+  certs:
+    cmds:
+    - mkcert -cert-file ./certs/localhost.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1
