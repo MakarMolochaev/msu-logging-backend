@@ -1,6 +1,6 @@
 ﻿﻿# msu-logging-backend
 
-Запуск сервисов - ```docker-compose --env-file .env.local up -d```
+Запуск сервисов - ```task runservs```
 
 Запуск сервера - ```task run```
 
