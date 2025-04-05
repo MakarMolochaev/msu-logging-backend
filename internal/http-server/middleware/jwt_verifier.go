@@ -25,6 +25,7 @@ func JWTVerifier(secret string) func(next http.Handler) http.Handler {
 			}
 
 			ctx := context.WithValue(r.Context(), TokenClaimsKey, claims)
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

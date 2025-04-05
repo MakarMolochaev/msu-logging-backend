@@ -2,13 +2,14 @@ package audiotask
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	mymiddleware "msu-logging-backend/internal/http-server/middleware"
 	"msu-logging-backend/internal/lib/api/response"
 	"net/http"
 
 	"github.com/go-chi/render"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Request struct {
@@ -32,19 +33,23 @@ func NewTaskStatusHandler(log *slog.Logger, taskStatusGetter TaskStatusGetter) h
 		)
 
 		claims, ok := r.Context().Value(mymiddleware.TokenClaimsKey).(jwt.MapClaims)
+
 		if !ok {
 			log.Error("failed to get JWT claims")
 			render.JSON(w, r, response.Error("authentication failed"))
 			return
 		}
 
-		taskId, ok := claims["taskId"].(int64)
+		taskClaim, ok := claims["taskId"]
+
 		if !ok {
 			log.Error("taskId claim not found or invalid")
 			render.JSON(w, r, response.Error("invalid token"))
 			return
 		}
 
+		taskId := int64(taskClaim.(float64))
+		fmt.Println(taskId)
 		taskStatus, err := taskStatusGetter.GetTaskStatusByID(r.Context(), taskId)
 		if err != nil {
 			log.Error("No task with this TaskId")

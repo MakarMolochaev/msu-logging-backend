@@ -4,7 +4,6 @@ tasks:
   run:
     desc: "Run program"
     cmds:
-    - go run ./cmd/migrator
     - go run cmd/msu-logging-backend/main.go --config=./config/local.yaml
   build:
     desc: "Build program"
