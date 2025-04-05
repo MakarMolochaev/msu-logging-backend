@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        
+        button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+
+    <title>WebSocket Audio Streaming</title>
+    <script>
+        let mediaRecorder;
+        let audioContext;
+        let processor;
+        let socket;
+        let token;
+
+        async function getToken() {
+            try {
+                const response = await fetch('http://localhost:8082/token', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log(data)
+                token = data.token; // Сохраняем токен
+                console.log('Token received:', token);
+                return true;
+            } catch (error) {
+                console.error('Error fetching token:', error);
+                return false;
+            }
+        }
+
+        async function startStreaming() {
+
+            const tokenReceived = await getToken();
+            if (!tokenReceived) {
+                alert('Failed to get token. Cannot start streaming.');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                
+                processor = audioContext.createScriptProcessor(1024, 1, 1);
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+                
+                socket = new WebSocket(`wss://localhost:8081/ws?token=${encodeURIComponent(token)}`);
+                
+                socket.onopen = () => {
+                    console.log('WebSocket connection established');
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                            socket.send(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.start(100);
+                };
+                
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                socket.onclose = () => {
+                    console.log('WebSocket connection closed');
+                };
+                
+                processor.onaudioprocess = (e) => {
+
+                };
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function stopStreaming() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (processor) {
+                processor.disconnect();
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        }
+    </script>
+</head>
+<body>
+    <button onclick="startStreaming()">Start Streaming</button>
+    <button onclick="stopStreaming()">Stop Streaming</button>
+</body>
+</html>

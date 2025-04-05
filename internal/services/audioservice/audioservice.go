@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	minioapp "msu-logging-backend/internal/app/minio"
 	rmqapp "msu-logging-backend/internal/app/rmq"
+	"os"
 )
 
 type AudioService struct {
@@ -50,6 +51,8 @@ func (a *AudioService) WhenWebsocketClosed(filename string) error {
 	}
 
 	log.Info("Audiofile uploaded to minio succesfully")
+
+	os.Remove(filename)
 
 	_, err = a.audioFileLinkSaver.SaveAudioFile(context.Background(), link)
 	if err != nil {

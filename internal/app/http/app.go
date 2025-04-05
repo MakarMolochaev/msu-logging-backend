@@ -2,12 +2,18 @@ package httpapp
 
 import (
 	"log/slog"
+	"msu-logging-backend/internal/config"
+	audiotask "msu-logging-backend/internal/http-server/handlers/audio-task"
+	"msu-logging-backend/internal/http-server/handlers/auth"
 	"msu-logging-backend/internal/http-server/handlers/valuation"
+	mymiddleware "msu-logging-backend/internal/http-server/middleware"
 	"msu-logging-backend/internal/storage/mysql"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 type App struct {
@@ -20,14 +26,29 @@ func New(
 	log *slog.Logger,
 	address string,
 	storage *mysql.Storage,
+	config *config.Config,
 ) *App {
 
 	router := chi.NewRouter()
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://example.com", "https://*.example.com"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
-	router.Post("/valuation", valuation.New(log, storage))
+	router.Post("/valuation", valuation.NewRateHandler(log, storage))
+	router.Get("/token", auth.NewTokenHandler(log, storage, config.HTTP.TokenTTL))
+
+	router.Group(func(r chi.Router) {
+		r.Use(mymiddleware.JWTVerifier(os.Getenv("JWT_SECRET")))
+		r.Get("/taskstatus", audiotask.NewTaskStatusHandler(log, storage))
+	})
 
 	HTTPServer := &http.Server{
 		Addr:    address,

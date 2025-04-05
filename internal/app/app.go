@@ -36,8 +36,8 @@ func New(
 
 	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv, cfg.MessageBroker.TranscribeQueue)
 	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port)
-	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
-	app.HTTPSrv = httpapp.New(log, cfg.HTTP.Address, storage)
+	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, storage, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
+	app.HTTPSrv = httpapp.New(log, cfg.HTTP.Address, storage, cfg)
 
 	return app
 }

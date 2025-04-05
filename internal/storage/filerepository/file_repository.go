@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 )
 
 type FileRepository struct {
@@ -17,8 +16,8 @@ func NewFileRepository() *FileRepository {
 	}
 }
 
-func (r *FileRepository) CreateAudioFile() string {
-	filename := fmt.Sprintf("audio_%v.wav", time.Now().Unix())
+func (r *FileRepository) CreateAudioFile(filename string) string {
+	//filename := fmt.Sprintf("audio_%v.wav", time.Now().Unix())
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Println("File creation error:", err)
@@ -36,8 +35,6 @@ func (r *FileRepository) WriteAudioData(filename string, data []byte) error {
 	}
 
 	_, err := file.Write(data)
-
-	fmt.Println("asdasd")
 	return err
 }
 

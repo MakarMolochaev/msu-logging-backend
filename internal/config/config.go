@@ -36,7 +36,8 @@ type MessageBrokerConfig struct {
 }
 
 type HTTPConfig struct {
-	Address string `yaml:"address"`
+	Address  string        `yaml:"address"`
+	TokenTTL time.Duration `yaml:"tokenTTL"`
 }
 
 func MustLoad() *Config {

@@ -9,7 +9,7 @@ tasks:
   build:
     desc: "Build program"
     cmds:
-    - go build cmd/msu-logging-backend/main.go
+    - go build -o bin/audio-server cmd/msu-logging-backend/main.go
   migrate:
     desc: "Apply migrations"
     cmds:

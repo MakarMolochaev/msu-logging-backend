@@ -26,9 +26,9 @@ type ValuationSaver interface {
 	SaveValuation(ctx context.Context, usability, processing_speed, processing_quality int, reuse_service bool, comment string) (int64, error)
 }
 
-func New(log *slog.Logger, valuationSaver ValuationSaver) http.HandlerFunc {
+func NewRateHandler(log *slog.Logger, valuationSaver ValuationSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.valuation.New"
+		const op = "handlers.valuation.NewRateHandler"
 
 		log = log.With(
 			slog.String("op", op),

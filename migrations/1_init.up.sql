@@ -1,8 +1,4 @@
-DROP USER IF EXISTS 'mysqladmin'@'%';
-
-CREATE USER 'mysqladmin'@'%' IDENTIFIED BY 'mysqladmin';
-GRANT ALL PRIVILEGES ON logging.* TO 'mysqladmin'@'%';
-FLUSH PRIVILEGES;
+CREATE DATABASE IF NOT EXISTS logging;
 
 CREATE TABLE IF NOT EXISTS logging.audio_file (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -34,4 +30,9 @@ CREATE TABLE IF NOT EXISTS logging.metrics (
     av_audio_time FLOAT,
     av_process_time FLOAT,
     satisfy_user_count INT
+);
+
+CREATE TABLE IF NOT EXISTS logging.tasks (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    task_status VARCHAR(24)
 );

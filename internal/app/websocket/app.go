@@ -1,9 +1,11 @@
 package wsapp
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log/slog"
+	"msu-logging-backend/internal/http-server/middleware"
 	"msu-logging-backend/internal/services/audioservice"
 	"msu-logging-backend/internal/storage/filerepository"
 	"net/http"
@@ -12,20 +14,26 @@ import (
 )
 
 type App struct {
-	log           *slog.Logger
-	server        *http.Server
-	port          int
-	upgrader      websocket.Upgrader
-	audio_service *audioservice.AudioService
-	fileRepo      *filerepository.FileRepository
-	certFile      string
-	keyFile       string
+	log             *slog.Logger
+	server          *http.Server
+	port            int
+	upgrader        websocket.Upgrader
+	audio_service   *audioservice.AudioService
+	fileRepo        *filerepository.FileRepository
+	taskStatusSaver TaskStatusSaver
+	certFile        string
+	keyFile         string
+}
+
+type TaskStatusSaver interface {
+	UpdateTaskStatusByID(ctx context.Context, id int64, task_status string) error
 }
 
 func New(
 	log *slog.Logger,
 	port int,
 	audio_service *audioservice.AudioService,
+	taskStatusSaver TaskStatusSaver,
 	certFile string,
 	keyFile string,
 ) *App {
@@ -48,14 +56,15 @@ func New(
 	}
 
 	app := &App{
-		log:           log,
-		server:        server,
-		port:          port,
-		upgrader:      upgrader,
-		certFile:      certFile,
-		keyFile:       keyFile,
-		fileRepo:      filerepository.NewFileRepository(),
-		audio_service: audio_service,
+		log:             log,
+		server:          server,
+		port:            port,
+		upgrader:        upgrader,
+		certFile:        certFile,
+		keyFile:         keyFile,
+		fileRepo:        filerepository.NewFileRepository(),
+		audio_service:   audio_service,
+		taskStatusSaver: taskStatusSaver,
 	}
 
 	mux.HandleFunc("/ws", app.handleWebSocket)
@@ -63,21 +72,32 @@ func New(
 	return app
 }
 
-func (a *App) handleWebSocketConnection(conn *websocket.Conn) error {
-	filename := a.fileRepo.CreateAudioFile()
+func (a *App) handleWebSocketConnection(conn *websocket.Conn, task_id int64) error {
+	const op = "websocket.handleWebSocketConnection"
+	log := a.log.With(
+		slog.String("op", op),
+	)
+
+	filename := fmt.Sprintf("audio_%v.wav", task_id)
+	a.fileRepo.CreateAudioFile(filename)
 	defer func() {
 		a.fileRepo.CloseAudioFile(filename)
 		if err := a.audio_service.WhenWebsocketClosed(filename); err != nil {
-			a.log.Error("Failed to process closed websocket", slog.String("error", err.Error()))
+			log.Error("Failed to process closed websocket", slog.String("error", err.Error()))
 		}
 		a.fileRepo.DeleteAudioFile(filename)
 	}()
 
-	a.log.Info("Created audio file")
+	log.Info("Created audio file")
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+			if websocket.IsCloseError(
+				err,
+				websocket.CloseNormalClosure,
+				websocket.CloseGoingAway,
+				websocket.CloseNoStatusReceived,
+			) {
 				a.log.Info("Client disconnected gracefully")
 				return nil
 			}
@@ -95,18 +115,34 @@ func (a *App) handleWebSocketConnection(conn *websocket.Conn) error {
 }
 
 func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	//token := r.URL.Query().Get("token")
-	//fmt.Println(token)
-
 	conn, err := a.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		a.log.Error("WebSocket upgrade failed", slog.String("error", err.Error()))
 		return
 	}
 
-	if err := a.handleWebSocketConnection(conn); err != nil {
-		a.log.Error("WebSocket connection error", slog.String("error", err.Error()))
+	tokenString := r.URL.Query().Get("token")
+	fmt.Println(tokenString)
+
+	jwt_claims, ok := middleware.ParseTokenString(tokenString)
+	if !ok {
+		a.log.Error("JWT error")
+		return
 	}
+
+	task_id := int64(jwt_claims["taskId"].(float64))
+	err = a.taskStatusSaver.UpdateTaskStatusByID(context.Background(), task_id, "in work")
+
+	if err != nil {
+		a.log.Error("Error while updating the task", slog.String("error", err.Error()))
+		return
+	}
+
+	if err := a.handleWebSocketConnection(conn, task_id); err != nil {
+		a.log.Error("WebSocket connection error", slog.String("error", err.Error()))
+		return
+	}
+
 }
 
 func (a *App) Run() error {
