@@ -20,7 +20,7 @@ func New(
 	}
 }
 
-func (a *JwtService) GenerateToken(taskId int64, tokenTTL time.Duration) (string, error) {
+func (a *JwtService) GenerateToken(taskId int32, tokenTTL time.Duration) (string, error) {
 	claims := jwt.MapClaims{
 		"exp":    time.Now().Add(tokenTTL).Unix(),
 		"iat":    time.Now().Unix(),

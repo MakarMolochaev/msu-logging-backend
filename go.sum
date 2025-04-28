@@ -64,6 +64,12 @@ github.com/makarmolochaev/msu-logging-protos v0.0.4 h1:x+IbFD+qGk2ZvDOydxrtUAOgf
 github.com/makarmolochaev/msu-logging-protos v0.0.4/go.mod h1:4zRPIbEGNTkTJ/waYarm5peqpocIUVf6M0/szGjQ4YU=
 github.com/makarmolochaev/msu-logging-protos v0.0.8 h1:K6U0YeY+vjKgCZP50DAatk5rj5ZATLGrR7zKHt1fPEY=
 github.com/makarmolochaev/msu-logging-protos v0.0.8/go.mod h1:4zRPIbEGNTkTJ/waYarm5peqpocIUVf6M0/szGjQ4YU=
+github.com/makarmolochaev/msu-logging-protos v0.0.10 h1:eRNjXx1qqFsvwu+2hm7oT3A2XPKMnfm/keLqDjufjEg=
+github.com/makarmolochaev/msu-logging-protos v0.0.10/go.mod h1:4zRPIbEGNTkTJ/waYarm5peqpocIUVf6M0/szGjQ4YU=
+github.com/makarmolochaev/msu-logging-protos v0.0.11 h1:DEm3Yb0dYfrysKAzCjzyovXbRuIELpHMx4z4DonELJ8=
+github.com/makarmolochaev/msu-logging-protos v0.0.11/go.mod h1:4zRPIbEGNTkTJ/waYarm5peqpocIUVf6M0/szGjQ4YU=
+github.com/makarmolochaev/msu-logging-protos v1.0.0 h1:2N7wylvbVVKHIMiN/rq1wKIPCegabLqGKiKs6xweeio=
+github.com/makarmolochaev/msu-logging-protos v1.0.0/go.mod h1:4zRPIbEGNTkTJ/waYarm5peqpocIUVf6M0/szGjQ4YU=
 github.com/mfridman/interpolate v0.0.2 h1:pnuTK7MQIxxFz1Gr+rjSIx9u7qVjf5VOoM/u6BbAxPY=
 github.com/mfridman/interpolate v0.0.2/go.mod h1:p+7uk6oE07mpE/Ik1b8EckO0O4ZXiGAfshKBWLUM9Xg=
 github.com/minio/crc64nvme v1.0.1 h1:DHQPrYPdqK7jQG/Ls5CTBZWeex/2FMS3G5XGkycuFrY=

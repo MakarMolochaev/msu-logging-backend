@@ -50,6 +50,8 @@ services:
       interval: 5s
       timeout: 20s
       retries: 10
+
+
 volumes:
   minio_data:
   mysql_data:

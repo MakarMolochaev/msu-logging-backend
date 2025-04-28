@@ -13,6 +13,27 @@
             padding: 10px;
             margin: 10px;
         }
+        
+        .status {
+            margin: 20px;
+            padding: 10px;
+            font-weight: bold;
+        }
+        
+        .protocol {
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 80%;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+        
+        .protocol-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 
     <title>WebSocket Audio Streaming</title>
@@ -22,6 +43,7 @@
         let processor;
         let socket;
         let token;
+        let statusInterval;
 
         async function getToken() {
             try {
@@ -45,7 +67,10 @@
         }
 
         async function startStreaming() {
-
+            // Очищаем предыдущие результаты
+            document.getElementById('statusContainer').innerHTML = '';
+            document.getElementById('protocolContainer').innerHTML = '';
+            
             const tokenReceived = await getToken();
             if (!tokenReceived) {
                 alert('Failed to get token. Cannot start streaming.');
@@ -85,7 +110,7 @@
                 };
                 
                 processor.onaudioprocess = (e) => {
-
+                    // Обработка аудио
                 };
                 
             } catch (error) {
@@ -106,11 +131,90 @@
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.close();
             }
+            
+            // Запускаем проверку статуса каждую секунду
+            checkTaskStatus();
+        }
+        
+        async function checkTaskStatus() {
+            // Очищаем предыдущий интервал, если он был
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+            
+            // Создаем контейнер для отображения статуса
+            const statusContainer = document.getElementById('statusContainer');
+            statusContainer.innerHTML = '<div class="status">Checking task status...</div>';
+            
+            // Запускаем интервал для проверки статуса каждую секунду
+            statusInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('http://localhost:8082/taskstatus',
+                    {
+                        credentials: 'include',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Task status response:', data);
+                    
+                    if (data.task_status === 'finished') {
+                        // Если статус "finished", прекращаем проверку и показываем протоколы
+                        clearInterval(statusInterval);
+                        displayProtocols(data.full_protocol, data.short_protocol);
+                    } else {
+                        // Показываем текущий статус
+                        statusContainer.innerHTML = `<div class="status">Task status: ${data.task_status}</div>`;
+                    }
+                } catch (error) {
+                    console.error('Error checking task status:', error);
+                    statusContainer.innerHTML = `<div class="status">Error checking status: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+        
+        function displayProtocols(fullProtocol, shortProtocol) {
+            const statusContainer = document.getElementById('statusContainer');
+            const protocolContainer = document.getElementById('protocolContainer');
+            
+            // Очищаем контейнеры
+            statusContainer.innerHTML = '';
+            protocolContainer.innerHTML = '';
+            
+            // Добавляем сообщение о готовности
+            statusContainer.innerHTML = '<div class="status" style="color: green;">Task completed successfully!</div>';
+            
+            // Добавляем full_protocol
+            const fullProtocolDiv = document.createElement('div');
+            fullProtocolDiv.className = 'protocol';
+            fullProtocolDiv.innerHTML = `
+                <div class="protocol-title">Full Protocol:</div>
+                <div>${fullProtocol}</div>
+            `;
+            protocolContainer.appendChild(fullProtocolDiv);
+            
+            // Добавляем short_protocol
+            const shortProtocolDiv = document.createElement('div');
+            shortProtocolDiv.className = 'protocol';
+            shortProtocolDiv.innerHTML = `
+                <div class="protocol-title">Short Protocol:</div>
+                <div>${shortProtocol}</div>
+            `;
+            protocolContainer.appendChild(shortProtocolDiv);
         }
     </script>
 </head>
 <body>
     <button onclick="startStreaming()">Start Streaming</button>
     <button onclick="stopStreaming()">Stop Streaming</button>
+    
+    <div id="statusContainer"></div>
+    <div id="protocolContainer"></div>
 </body>
 </html>

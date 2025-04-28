@@ -8,21 +8,57 @@ import (
 	"google.golang.org/grpc"
 )
 
-type serverAPI struct {
-	msu_loggingv1.UnimplementedTranscribeServer
+type AudioProcessor interface {
+	WhenAudioTranscribed(taskId int32, transcribedText string) error
+	WhenProtocolIsReady(taskId int32, protocolText string) error
 }
 
-func Register(gRPC *grpc.Server) {
-	msu_loggingv1.RegisterTranscribeServer(gRPC, &serverAPI{})
+type serverAPI struct {
+	msu_loggingv1.UnimplementedTranscribeServer
+	msu_loggingv1.UnimplementedProtocolServer
+	audio_service AudioProcessor
+}
+
+func Register(gRPC *grpc.Server, audio_service AudioProcessor) {
+	serverApi := &serverAPI{
+		audio_service: audio_service,
+	}
+	msu_loggingv1.RegisterTranscribeServer(gRPC, serverApi)
+	msu_loggingv1.RegisterProtocolServer(gRPC, serverApi)
 }
 
 func (s *serverAPI) SendTranscribeResult(
 	ctx context.Context,
 	req *msu_loggingv1.TranscribeResult,
 ) (*msu_loggingv1.Result, error) {
-	fmt.Println(req.GetErrorMessage())
-	fmt.Println(req.GetResult())
-	fmt.Println(req.GetSuccess())
 
-	return &msu_loggingv1.Result{Success: true}, nil
+	fmt.Println("Recieved gRPC message SendTranscribeResult")
+
+	if req.GetSuccess() {
+		err := s.audio_service.WhenAudioTranscribed(req.GetTaskId(), req.GetResult())
+		if err == nil {
+			return &msu_loggingv1.Result{Success: true}, nil
+		}
+	}
+
+	return &msu_loggingv1.Result{Success: false}, nil
+
+}
+
+func (s *serverAPI) SendProtocolResult(
+	ctx context.Context,
+	req *msu_loggingv1.ProtocolResult,
+) (*msu_loggingv1.Result, error) {
+
+	fmt.Println("Recieved gRPC message SendProtocolResult")
+
+	if req.GetSuccess() {
+		err := s.audio_service.WhenProtocolIsReady(req.GetTaskId(), req.GetResult())
+		if err == nil {
+			return &msu_loggingv1.Result{Success: true}, nil
+		}
+	}
+
+	return &msu_loggingv1.Result{Success: false}, nil
+
 }

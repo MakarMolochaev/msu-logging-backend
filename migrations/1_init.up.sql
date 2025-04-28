@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS logging.audio_file (
 );
 
 
-CREATE TABLE IF NOT EXISTS logging.text_file (
+CREATE TABLE IF NOT EXISTS logging.protocols (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    task_id INT UNSIGNED,
     text_full VARCHAR(1000),
     text_short VARCHAR(1000),
     date_created DATETIME

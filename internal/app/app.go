@@ -34,10 +34,10 @@ func New(
 	app.MinioSrv = minioapp.New(log)
 	app.RMQSrv = rmqapp.New(log, cfg)
 
-	audio_service := audioservice.New(log, storage, app.RMQSrv, app.MinioSrv, cfg.MessageBroker.TranscribeQueue)
-	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port)
+	audio_service := audioservice.New(log, storage, storage, app.RMQSrv, app.MinioSrv, cfg.MessageBroker.TranscribeQueue, cfg.MessageBroker.ProcessQueue)
+	app.GRPCSrv = grpcapp.New(log, cfg.GRPC.Port, audio_service)
 	app.WSSrv = wsapp.New(log, cfg.Websocket.Port, audio_service, storage, cfg.Websocket.CertFile, cfg.Websocket.KeyFile)
-	app.HTTPSrv = httpapp.New(log, cfg.HTTP.Address, storage, cfg)
+	app.HTTPSrv = httpapp.New(log, cfg.HTTP.Address, storage, cfg, audio_service, app.MinioSrv)
 
 	return app
 }

@@ -1,9 +1,12 @@
 package rmqapp
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"msu-logging-backend/internal/config"
+	rabbitmodels "msu-logging-backend/internal/domain/models"
 	"os"
 	"time"
 
@@ -98,6 +101,10 @@ func (a *App) Stop() error {
 }
 
 func (a *App) SendMessage(queueName string, message string) error {
+	const op = "rmqapp.SendMessage"
+	log := a.log.With(
+		slog.String("op", op),
+	)
 	_, err := a.channel.QueueDeclare(
 		queueName,
 		true,
@@ -107,7 +114,8 @@ func (a *App) SendMessage(queueName string, message string) error {
 		nil,
 	)
 	if err != nil {
-		return err
+		log.Error("Error in declaring queue")
+		return fmt.Errorf("error in declaring queue:%v", err)
 	}
 
 	err = a.channel.Publish(
@@ -121,5 +129,106 @@ func (a *App) SendMessage(queueName string, message string) error {
 			DeliveryMode: amqp.Persistent,
 		},
 	)
-	return err
+	if err != nil {
+		log.Error("Error in publishing in queue")
+		return fmt.Errorf("error in publishing in queue:%v", err)
+	}
+	return nil
+}
+
+// for NN Service
+func (a *App) SendTranscribeRequest(queueName string, transcribeRequestData rabbitmodels.TranscribeRequest) error {
+	const op = "rmqapp.SendTranscribeRequest"
+	log := a.log.With(
+		slog.String("op", op),
+	)
+	_, err := a.channel.QueueDeclare(
+		queueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Error("Error in declaring queue")
+		return fmt.Errorf("error in declaring queue:%v", err)
+	}
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(transcribeRequestData)
+	if err != nil {
+		log.Error("Error in encoding JSON")
+		return fmt.Errorf("error in encoding json: %v", err)
+	}
+
+	jsonBody := buf.Bytes()
+
+	err = a.channel.Publish(
+		"",
+		queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         jsonBody,
+			DeliveryMode: amqp.Persistent,
+		},
+	)
+	if err != nil {
+		log.Error("Error in publishing in queue")
+		return fmt.Errorf("error in publishing in queue:%v", err)
+	}
+	return nil
+}
+
+// for NLP Service
+func (a *App) SendProtocolRequest(queueName string, protocolRequestData rabbitmodels.ProtocolRequest) error {
+	const op = "rmqapp.SendProtocolRequest"
+
+	log := a.log.With(
+		slog.String("op", op),
+	)
+	_, err := a.channel.QueueDeclare(
+		queueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Error("Error in declaring queue")
+		return fmt.Errorf("error in declaring queue:%v", err)
+	}
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(protocolRequestData)
+	if err != nil {
+		log.Error("Error in encoding JSON")
+		return fmt.Errorf("error in encoding json: %v", err)
+	}
+
+	jsonBody := buf.Bytes()
+
+	err = a.channel.Publish(
+		"",
+		queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         jsonBody,
+			DeliveryMode: amqp.Persistent,
+		},
+	)
+	if err != nil {
+		log.Error("Error in publishing in queue")
+		return fmt.Errorf("error in publishing in queue:%v", err)
+	}
+	return nil
 }

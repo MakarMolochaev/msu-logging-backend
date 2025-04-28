@@ -14,5 +14,5 @@ message_broker:
   process_queue: "process_queue"
 
 HTTP:
-  address: localhost:8082
+  address: 0.0.0.0:8082
   tokenTTL: 6h

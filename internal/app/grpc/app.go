@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	transcribeserver "msu-logging-backend/internal/grpc/transcribe-server"
+	"msu-logging-backend/internal/services/audioservice"
 	"net"
 
 	"google.golang.org/grpc"
@@ -18,9 +19,10 @@ type App struct {
 func New(
 	log *slog.Logger,
 	port int,
+	audioService *audioservice.AudioService,
 ) *App {
 	gRPCServer := grpc.NewServer()
-	transcribeserver.Register(gRPCServer)
+	transcribeserver.Register(gRPCServer, audioService)
 
 	return &App{
 		log:        log,

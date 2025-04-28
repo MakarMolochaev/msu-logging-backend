@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -14,13 +15,15 @@ type contextKey string
 
 const (
 	TokenClaimsKey contextKey = "jwt_claims"
+	JWTCookieName  string     = "jwt_token"
 )
 
-func JWTVerifier(secret string) func(next http.Handler) http.Handler {
+func JWTVerifier(log *slog.Logger, secret string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, ok := ParseTokenFromRequest(w, r)
+			claims, ok := ParseTokenFromCookie(w, r)
 			if !ok {
+				log.Error("Error in token parsing")
 				return
 			}
 
@@ -31,20 +34,14 @@ func JWTVerifier(secret string) func(next http.Handler) http.Handler {
 	}
 }
 
-func ParseTokenFromRequest(w http.ResponseWriter, r *http.Request) (jwt.MapClaims, bool) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+func ParseTokenFromCookie(w http.ResponseWriter, r *http.Request) (jwt.MapClaims, bool) {
+	cookie, err := r.Cookie(JWTCookieName)
+	if err != nil {
+		http.Error(w, "Authorization cookie is required", http.StatusUnauthorized)
 		return nil, false
 	}
 
-	tokenParts := strings.Split(authHeader, " ")
-	if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-		return nil, false
-	}
-
-	return ParseTokenString(tokenParts[1])
+	return ParseTokenString(cookie.Value)
 }
 
 func ParseTokenString(tokenString string) (jwt.MapClaims, bool) {
@@ -67,4 +64,20 @@ func ParseTokenString(tokenString string) (jwt.MapClaims, bool) {
 	}
 
 	return claims, true
+}
+
+func ParseTokenFromRequest(w http.ResponseWriter, r *http.Request) (jwt.MapClaims, bool) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+		return nil, false
+	}
+
+	tokenParts := strings.Split(authHeader, " ")
+	if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		return nil, false
+	}
+
+	return ParseTokenString(tokenParts[1])
 }

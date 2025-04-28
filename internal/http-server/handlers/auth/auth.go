@@ -11,9 +11,6 @@ import (
 	"github.com/go-chi/render"
 )
 
-type Request struct {
-}
-
 type Response struct {
 	response.Response
 	Token     string    `json:"token"`
@@ -21,7 +18,8 @@ type Response struct {
 }
 
 type TaskStatusCreater interface {
-	CreateNewTaskStatus(ctx context.Context) (int64, error)
+	CreateNewTaskStatus(ctx context.Context) (int32, error)
+	CreateNewProtocol(ctx context.Context, task_id int32) error
 }
 
 func NewTokenHandler(log *slog.Logger, taskStatusCreater TaskStatusCreater, tokenTTL time.Duration) http.HandlerFunc {
@@ -47,6 +45,25 @@ func NewTokenHandler(log *slog.Logger, taskStatusCreater TaskStatusCreater, toke
 			render.JSON(w, r, response.Error("Failed to generate token"))
 			return
 		}
+
+		err = taskStatusCreater.CreateNewProtocol(context.Background(), taskId)
+		if err != nil {
+			log.Error("Failed to save protocol placeholder in DB", slog.String("error", err.Error()))
+			render.JSON(w, r, response.Error("Failed to save protocol placeholder in DB"))
+			return
+		}
+
+		//w.Header().Set("Authorization", "Bearer "+tokenString)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "jwt_token",
+			Value:    tokenString,
+			Path:     "/",
+			Domain:   "",
+			Secure:   false,
+			HttpOnly: false,
+			SameSite: http.SameSiteLaxMode,
+			Expires:  time.Now().Add(tokenTTL),
+		})
 
 		render.JSON(w, r, Response{
 			Response:  response.OK(),

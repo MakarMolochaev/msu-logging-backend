@@ -17,14 +17,20 @@ type Request struct {
 
 type Response struct {
 	response.Response
-	TaskStatus string `json:"task_status"`
+	TaskStatus    string `json:"task_status"`
+	FullProtocol  string `json:"full_protocol"`
+	ShortProtocol string `json:"short_protocol"`
 }
 
 type TaskStatusGetter interface {
-	GetTaskStatusByID(ctx context.Context, id int64) (string, error)
+	GetTaskStatusByID(ctx context.Context, id int32) (string, error)
 }
 
-func NewTaskStatusHandler(log *slog.Logger, taskStatusGetter TaskStatusGetter) http.HandlerFunc {
+type ProtocolGetter interface {
+	GetProtocol(ctx context.Context, id int32) (string, string, error)
+}
+
+func NewTaskStatusHandler(log *slog.Logger, taskStatusGetter TaskStatusGetter, protocolGetter ProtocolGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.audiotask.NewTaskStatusHandler"
 
@@ -48,7 +54,7 @@ func NewTaskStatusHandler(log *slog.Logger, taskStatusGetter TaskStatusGetter) h
 			return
 		}
 
-		taskId := int64(taskClaim.(float64))
+		taskId := int32(taskClaim.(float64))
 		fmt.Println(taskId)
 		taskStatus, err := taskStatusGetter.GetTaskStatusByID(r.Context(), taskId)
 		if err != nil {
@@ -56,10 +62,27 @@ func NewTaskStatusHandler(log *slog.Logger, taskStatusGetter TaskStatusGetter) h
 			render.JSON(w, r, response.Error("No task with this TaskId"))
 			return
 		}
-		render.JSON(w, r, Response{
-			Response:   response.OK(),
-			TaskStatus: taskStatus,
-		})
 
+		shortProtocolText, fullProtocolText, err := protocolGetter.GetProtocol(context.Background(), taskId)
+		if err != nil {
+			log.Error("No protocol with this TaskId")
+			log.Info(string(taskId))
+			render.JSON(w, r, response.Error("No protocol with this TaskId"))
+			return
+		}
+
+		if taskStatus == "finished" {
+			render.JSON(w, r, Response{
+				Response:      response.OK(),
+				TaskStatus:    taskStatus,
+				FullProtocol:  fullProtocolText,
+				ShortProtocol: shortProtocolText,
+			})
+		} else {
+			render.JSON(w, r, Response{
+				Response:   response.OK(),
+				TaskStatus: taskStatus,
+			})
+		}
 	}
 }

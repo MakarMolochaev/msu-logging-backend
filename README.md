@@ -1,7 +1,7 @@
-﻿﻿# msu-logging-backend
+# msu-logging-backend
+  
+  Запуск сервисов - ```task runservs```
 
-Запуск сервисов - ```task runservs```
+  Запуск сервера - ```task run```
 
-Запуск сервера - ```task run```
-
-Применить миграции - ```task migrate```
+  Применить миграции - ```task migrate```

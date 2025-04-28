@@ -5,14 +5,10 @@ tasks:
     desc: "Run program"
     cmds:
     - go run cmd/msu-logging-backend/main.go --config=./config/local.yaml
-  build:
-    desc: "Build program"
-    cmds:
-    - go build -o bin/audio-server cmd/msu-logging-backend/main.go
   migrate:
     desc: "Apply migrations"
     cmds:
-    - go run ./cmd/migrator
+    - go run ./cmd/migrator --mysql_conn_str="mysqladmin:mysqladmin@tcp(localhost:3306)/logging"
   runservs:
     cmds:
     - docker-compose --env-file .env.local up -d

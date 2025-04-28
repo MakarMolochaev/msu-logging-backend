@@ -26,7 +26,7 @@ type App struct {
 }
 
 type TaskStatusSaver interface {
-	UpdateTaskStatusByID(ctx context.Context, id int64, task_status string) error
+	UpdateTaskStatusByID(ctx context.Context, id int32, task_status string) error
 }
 
 func New(
@@ -72,7 +72,7 @@ func New(
 	return app
 }
 
-func (a *App) handleWebSocketConnection(conn *websocket.Conn, task_id int64) error {
+func (a *App) handleWebSocketConnection(conn *websocket.Conn, task_id int32) error {
 	const op = "websocket.handleWebSocketConnection"
 	log := a.log.With(
 		slog.String("op", op),
@@ -82,7 +82,7 @@ func (a *App) handleWebSocketConnection(conn *websocket.Conn, task_id int64) err
 	a.fileRepo.CreateAudioFile(filename)
 	defer func() {
 		a.fileRepo.CloseAudioFile(filename)
-		if err := a.audio_service.WhenWebsocketClosed(filename); err != nil {
+		if err := a.audio_service.StartFileProcessing(task_id, filename); err != nil {
 			log.Error("Failed to process closed websocket", slog.String("error", err.Error()))
 		}
 		a.fileRepo.DeleteAudioFile(filename)
@@ -130,8 +130,8 @@ func (a *App) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task_id := int64(jwt_claims["taskId"].(float64))
-	err = a.taskStatusSaver.UpdateTaskStatusByID(context.Background(), task_id, "in work")
+	task_id := int32(jwt_claims["taskId"].(float64))
+	err = a.taskStatusSaver.UpdateTaskStatusByID(context.Background(), task_id, "none")
 
 	if err != nil {
 		a.log.Error("Error while updating the task", slog.String("error", err.Error()))
