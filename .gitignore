@@ -4,5 +4,6 @@
 *.crt
 *.wav
 bin
+.env.prod
 .vscode
 .VSCodeCounter
